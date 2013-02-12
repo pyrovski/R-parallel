@@ -40,7 +40,7 @@ dynamicClusterApply <- function(cl = NULL, fun, n, argfun) {
     cl <- defaultCluster(cl)
     p <- length(cl)
     if (n > 0L && p) {
-        submitted = vector('logical', p)
+        submitted = vector('logical', n)
         submit <- function(node, job){
             sendCall(cl[[node]], fun, argfun(job), tag = job)
             submitted[job] <<- T
