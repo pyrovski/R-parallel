@@ -106,6 +106,11 @@ recvOneData.SOCKcluster <- function(cl)
 {
     socklist <- lapply(cl, function(x) x$con)
     priority <- lapply(cl, function(x) x$priority)
+    errors <- which(sapply(cl, function(x) !is.null(x$error)))
+    if(length(errors) > 0){
+      socklist = socklist[-errors]
+      priority = priority[-errors]
+    }
     repeat {
         ready <- socketSelect(socklist)
         if (length(ready) > 0) break;
@@ -113,7 +118,7 @@ recvOneData.SOCKcluster <- function(cl)
     n <- which(ready)[which.max(priority[ready])]  # may need rotation or some such for fairness
 #! @todo will a socket be ready in socketSelect() once it has had an error?
 ###
-    cat(paste('receiving from', cl[[n]], '\n'))
+#    cat(paste('receiving from', n, '\n'))
 ###
     list(node = n, value = try(unserialize(socklist[[n]])))
 }
