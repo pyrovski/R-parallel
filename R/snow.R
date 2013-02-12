@@ -213,9 +213,9 @@ recvOneResult <- function (cl) {
     else v <- recvOneData(cl)
 #! @todo check for try-error in v$value
     if(inherits(v$value, 'try-error'))
-      list(value = v$value, node = v$node, tag = NULL)
+      return(list(value = v$value, node = v$node, tag = NULL))
     else
-      list(value = v$value$value, node = v$node, tag = v$value$tag)
+      return(list(value = v$value$value, node = v$node, tag = v$value$tag))
 }
 
 findRecvOneTag <- function(cl, anytag) {
