@@ -178,7 +178,7 @@ recvResult <- function(con)
     r$value
 }
 
-checkForRemoteErrors <- function(val)
+checkForRemoteErrors <- function(val, errorsAsWarnings=F)
 {
     count <- 0
     firstmsg <- NULL
@@ -188,11 +188,18 @@ checkForRemoteErrors <- function(val)
             if (count == 1) firstmsg <- v
         }
     }
-    ## These will not translate
-    if (count == 1)
+    if(errorsAsWarnings){
+      if (count == 1)
+        warning("one node produced an error: ", firstmsg, domain = NA)
+      else if (count > 1)
+        warning(count, " nodes produced errors; first error: ", firstmsg, domain = NA)
+    } else {
+      ## These will not translate
+      if (count == 1)
         stop("one node produced an error: ", firstmsg, domain = NA)
-    else if (count > 1)
+      else if (count > 1)
         stop(count, " nodes produced errors; first error: ", firstmsg, domain = NA)
+    }
     val
 }
 
@@ -204,7 +211,11 @@ recvOneResult <- function (cl) {
         .snowTimingData$enterRecv(v$node, start, end, v$value$time[3])
     }
     else v <- recvOneData(cl)
-    list(value = v$value$value, node = v$node, tag = v$value$tag)
+#! @todo check for try-error in v$value
+    if(inherits(v$value, 'try-error'))
+      list(value = v$value, node = v$node, tag = NULL)
+    else
+      list(value = v$value$value, node = v$node, tag = v$value$tag)
 }
 
 findRecvOneTag <- function(cl, anytag) {

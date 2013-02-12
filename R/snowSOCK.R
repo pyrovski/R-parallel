@@ -105,12 +105,17 @@ recvData.SOCKnode <- recvData.SOCK0node <- function(node) unserialize(node$con)
 recvOneData.SOCKcluster <- function(cl)
 {
     socklist <- lapply(cl, function(x) x$con)
+    priority <- lapply(cl, function(x) x$priority)
     repeat {
         ready <- socketSelect(socklist)
         if (length(ready) > 0) break;
     }
-    n <- which(ready)[1L]  # may need rotation or some such for fairness
-    list(node = n, value = unserialize(socklist[[n]]))
+    n <- which(ready)[which.max(priority[ready])]  # may need rotation or some such for fairness
+#! @todo will a socket be ready in socketSelect() once it has had an error?
+###
+    cat(paste('receiving from', cl[[n]], '\n'))
+###
+    list(node = n, value = try(unserialize(socklist[[n]])))
 }
 
 makePSOCKcluster <- function(names, ...)
@@ -122,6 +127,39 @@ makePSOCKcluster <- function(names, ...)
         cl[[i]] <- newPSOCKnode(names[[i]], options = options, rank = i)
     class(cl) <- c("SOCKcluster", "cluster")
     cl
+}
+
+makePSOCKcluster.ports <- function (names, ports, sshPorts, users, reverse, priority=NULL, ...) 
+{
+  if (is.numeric(names)) 
+    names <- rep("localhost", names[1])
+  stopifnot(length(unique(sapply(list(names, ports, sshPorts, users, reverse), 
+                                 length))) == 1)
+  options <- addClusterOptions(defaultClusterOptions, list(...))
+  if(is.null(priority))
+    priority = vector('integer', length(names))
+  cl <- vector("list", length(names))
+  for (i in seq_along(cl)){
+    if(reverse[i])
+      reversePort = paste("-R ", 
+        ports[i], ":localhost:", ports[i], sep = "")
+    else reversePort = ''
+    cl[[i]] <-
+      newPSOCKnode(
+        names[[i]], 
+        options = addClusterOptions(
+          options,
+          list(
+            user=users[i],
+            port = ports[i], 
+            rshcmd = paste("ssh -p", sshPorts[i], reversePort, 
+              sep = " ")
+            )),
+        rank = i)
+    cl[[i]]$priority = priority[i]
+  }
+  class(cl) <- c("SOCKcluster", "cluster")
+  cl
 }
 
 print.SOCKcluster <- function(x, ...)

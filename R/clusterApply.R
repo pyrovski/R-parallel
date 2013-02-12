@@ -40,17 +40,27 @@ dynamicClusterApply <- function(cl = NULL, fun, n, argfun) {
     cl <- defaultCluster(cl)
     p <- length(cl)
     if (n > 0L && p) {
-        submit <- function(node, job)
+        submitted = vector('logical', p)
+        submit <- function(node, job){
             sendCall(cl[[node]], fun, argfun(job), tag = job)
+            submitted[job] <<- T
+###
+            cat(paste('submitted', job, 'on', cl[[node]], '\n'))
+###
+          }
         for (i in 1:min(n, p)) submit(i, i)
         val <- vector("list", n)
+#! @todo assume jobs have no side effects
+#! @todo optionally continue working until all nodes are dead
         for (i in 1:n) {
             d <- recvOneResult(cl)
-            j <- i + min(n, p)
-            if (j <= n) submit(d$node, j)
+            if(!inherits(d$value, 'try-error')){
+                j <- match(F, submitted)
+                if (!is.na(j)) submit(d$node, j)
+            }
             val[d$tag] <- list(d$value)
         }
-        checkForRemoteErrors(val)
+        checkForRemoteErrors(val, errorsAsWarnings=T)
     }
 }
 

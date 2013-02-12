@@ -12,7 +12,7 @@ export(clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
        makeCluster, makeForkCluster, makePSOCKcluster, mclapply,
        mcmapply, parApply, parCapply, parLapply, parLapplyLB,
        parRapply, parSapply, parSapplyLB, pvec, setDefaultCluster,
-       splitIndices, stopCluster)
+       splitIndices, stopCluster, makePSOCKcluster.ports)
 
 S3method(print, SOCKcluster)
 S3method(print, SOCKnode)
