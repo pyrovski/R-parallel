@@ -48,13 +48,15 @@ dynamicClusterApply <- function(cl = NULL, fun, n, argfun) {
 #            cat(paste('submitted', job, 'on', node, '\n'))
 ###
           }
-        start <- proc.time()[3L] 
+        start <- proc.time()[3L]
+        nodeCounts = vector('integer', p)
         for (i in 1:min(n, p)) submit(i, i)
         val <- vector("list", n)
 #! @todo assume jobs have no side effects
 #! @todo optionally continue working until all nodes are dead
         for (i in 1:n) {
             d <- recvOneResult(cl)
+            nodeCounts[d$node] = nodeCounts[d$node] + 1
             if(!inherits(d$value, 'try-error')){
                 j <- match(F, submitted)
                 if (!is.na(j)) submit(d$node, j)
@@ -62,18 +64,22 @@ dynamicClusterApply <- function(cl = NULL, fun, n, argfun) {
 ###
               cat(paste('error on',d$node,'\n'))
 ###
-              cl[[d$node]]$error = T
+              cl[[d$node]]$error <<- T
             }
             val[d$tag] <- list(d$value)
             elapsed =  proc.time()[3L] - start
             meanTime = elapsed / i
             estRemaining = (n - i) * meanTime
 ###
-            cat(paste(i, '/', n, ':', format(estRemaining, digits=1), rep(' ', 10), '\r'))
+            cat(paste(i, '/', n, ':',
+                      format(-estRemaining, digits=1),
+                      format(elapsed, digits=1),
+                      rep(' ', 10), '\r'))
 ###
         }
 ###
         cat('\n')
+        print(nodeCounts)
 ###
         checkForRemoteErrors(val, errorsAsWarnings=T)
     }
