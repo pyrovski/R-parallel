@@ -111,6 +111,8 @@ recvOneData.SOCKcluster <- function(cl)
       socklist = socklist[-errors]
       priority = priority[-errors]
     }
+    if(length(errors) == length(cl))
+      stop('all nodes returned error')
     repeat {
         ready <- socketSelect(socklist)
         if (length(ready) > 0) break;
