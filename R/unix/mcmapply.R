@@ -29,9 +29,7 @@ mcmapply <-
     n <- max(lens)
     if(n && min(lens) == 0L)
         stop("Zero-length inputs cannot be mixed with those of non-zero length")
-    answer <- if(n <= mc.cores) {
-        .Call("do_mapply", FUN, dots, MoreArgs, environment(), PACKAGE = "base")
-    } else {
+    answer <-  {
         ## recycle shorter vectors
         X <- if (!all(lens == n))
             lapply(dots, function(x) rep(x, length.out = n))
